@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 
 	curso_concesionario_snprintf(info, sizeof(info), con);
 	printf("%s", info);
-	escribeFichero("escritura.dat", con);
+	escribeFichero("escritura.data", con);
 	curso_concesionario_free(con);
 	return 0;
 }
