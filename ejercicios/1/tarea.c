@@ -1,7 +1,7 @@
 #include "tarea.h"
 #include <string.h>
 
-struct tarea {
+/*struct tarea {
 	struct list_head	head;
 
 	const char	*nombre_tarea;
@@ -11,7 +11,7 @@ struct tarea {
 	uint32_t	prioridad;
 
 	uint32_t	flags;
-};
+};*/
 
 struct tarea *curso_tarea_alloc(void)
 {

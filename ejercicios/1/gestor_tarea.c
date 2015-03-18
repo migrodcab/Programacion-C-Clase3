@@ -35,13 +35,20 @@ struct gestor_tarea *curso_gestor_alloc(void)
 
 	INIT_LIST_HEAD(&ges->tareas);
 
+	ges->flags |= (1 << CURSO_GESTOR_ATTR_NUM_TAREAS);
+
 	return ges;
 }
 void curso_gestor_free(struct gestor_tarea *ges)
 {
 	int i;
-	for (i = 0; i < ges->num_tareas; i++)
-		curso_tarea_free(ges->tareas[i]);
+	struct tarea *t, *tmp;
+	/*for (i = 0; i < ges->num_tareas; i++)
+		curso_tarea_free(ges->tareas[i]);*/
+	list_for_each_entry_safe(t, tmp, &ges->tareas, head) {
+		list_del(&t->head);
+		curso_tarea_free(t);
+	}
 
 	xfree(ges);
 }
@@ -49,20 +56,34 @@ void curso_gestor_free(struct gestor_tarea *ges)
 void curso_gestor_attr_unset_tarea(struct gestor_tarea *ges,
 					  uint32_t pos)
 {
+	int i = 0;
+	struct tarea *t, *tmp;
 	if (pos < 0 || pos > ges->num_tareas)
 		return;
 
-	curso_tarea_free(ges->tareas[pos]);
+	/*curso_tarea_free(ges->tareas[pos]);
 	int i;
 	for ( i = pos; i < ges->num_tareas; i++) 
-		ges->tareas[i] = ges->tareas[i+1];
+		ges->tareas[i] = ges->tareas[i+1];*/
+
+	list_for_each_entry_safe(t, tmp, &ges->tareas, head) {
+		if (i == pos) {
+			list_del(&t->head);
+			curso_tarea_free(t);
+			break;
+		}
+
+		i++;
+	}
 	ges->num_tareas--;
 }
 
 static void curso_gestor_set_data(struct gestor_tarea *ges,
 					 uint16_t attr, const void *data)
 {
-	int i, pos;
+	//int i, pos;
+	struct tarea *t;
+
 	if (attr > CURSO_GESTOR_ATTR_MAX)
 		return;
 
@@ -72,7 +93,7 @@ static void curso_gestor_set_data(struct gestor_tarea *ges,
 			printf("La lista de tareas esta llena\n");
 			break;
 		}
-		if (ges->num_tareas > 0)
+		/*if (ges->num_tareas > 0)
 			pos = binsearch(ges->tareas, ges->num_tareas, (struct tarea *)data);
 		else
 			pos = 0;
@@ -81,6 +102,10 @@ static void curso_gestor_set_data(struct gestor_tarea *ges,
 			ges->tareas[i+1] = ges->tareas[i];
 
 		ges->tareas[pos] = (struct tarea *)data;
+		ges->num_tareas++;
+		break;*/
+		t = (struct tarea *)data;
+		list_add(&t->head, &ges->tareas);
 		ges->num_tareas++;
 		break;
 	}
@@ -101,6 +126,8 @@ void curso_gestor_attr_set_tarea(struct gestor_tarea *ges,
 const void *curso_gestor_attr_get_data(struct gestor_tarea *ges,
 					      uint16_t attr, uint32_t pos)
 {
+	int i = 0;
+	struct tarea *t;
 	if (!(ges->flags & (1 << attr)))
 		return NULL;
 
@@ -108,7 +135,14 @@ const void *curso_gestor_attr_get_data(struct gestor_tarea *ges,
 	case CURSO_GESTOR_ATTR_NUM_TAREAS:
 		return &ges->num_tareas;
 	case CURSO_GESTOR_ATTR_TAREA:
-		return ges->tareas[pos];
+		list_for_each_entry(t, &ges->tareas, head) {
+			if (i == pos)
+				break;
+
+			i++;
+		}
+
+		return t;
 	}
 	return NULL;
 }
@@ -132,14 +166,15 @@ struct tarea *curso_gestor_attr_get_tarea(struct gestor_tarea *ges,
 
 int curso_gestor_snprintf(char *buf, size_t size, struct gestor_tarea *ges)
 {
-	int i, ret = 0;
+	int ret = 0;
+	struct tarea *t;
 
 	ret += snprintf(buf, size,
 			"La lista de tareas tiene %d y son:\n", ges->num_tareas);
 
-	for (i = 0; i < ges->num_tareas; i++) {
-		ret += curso_tarea_snprintf(buf + ret, size - ret, ges->tareas[i]);
-		//ret += snprintf(buf + ret, size - ret, "\n");
+	list_for_each_entry(t, &ges->tareas, head) {
+		ret += curso_tarea_snprintf(buf + ret, size - ret, t);
+		ret += snprintf(buf + ret, size - ret, "\n");
 	}
 
 	return ret;

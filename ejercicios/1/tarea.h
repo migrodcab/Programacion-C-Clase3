@@ -18,7 +18,19 @@ enum {
 
 #define xfree(ptr)      free((void *)ptr);
 
-struct tarea;
+//struct tarea;
+
+struct tarea {
+	struct list_head	head;
+
+	const char	*nombre_tarea;
+	const char	*desc_tarea;
+	uint32_t	id;
+	const char	*usuario;
+	uint32_t	prioridad;
+
+	uint32_t	flags;
+};
 
 struct tarea *curso_tarea_alloc(void);
 void curso_tarea_free(struct tarea *);
